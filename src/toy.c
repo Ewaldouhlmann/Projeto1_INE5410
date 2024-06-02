@@ -15,10 +15,11 @@
 
 // Thread que o brinquedo vai usar durante toda a simulacao do sistema
 void *turn_on(void *args){
+    toy_t *toy = (toy_t *) args;
 
-    debug("[ON] - O brinquedo  [%d] foi ligado.\n", rand()); // Altere para o id do brinquedo
+    debug("[ON] - O brinquedo  [%d] foi ligado.\n", toy->id); 
 
-    debug("[OFF] - O brinquedo [%d] foi desligado.\n", rand()); // Altere para o id do brinquedo
+    debug("[OFF] - O brinquedo [%d] foi desligado.\n", toy->id);
 
     pthread_exit(NULL);
 }
@@ -26,10 +27,22 @@ void *turn_on(void *args){
 
 // Essa função recebe como argumento informações e deve iniciar os brinquedos.
 void open_toys(toy_args *args){
-    // Sua lógica aqui
+    total_brinquedos = args->n;   // recupera o total de 
+    brinquedos = malloc(sizeof(toy_t *) * total_brinquedos);
+
+    for(int i = 0; i < total_brinquedos; i++)
+    {
+        brinquedos[i] = args->toys[i];
+        pthread_create(&brinquedos[i]->thread, NULL, turn_on, (void *)brinquedos[i]);
+    }
+
 }
 
 // Desligando os brinquedos
 void close_toys(){
-    // Sua lógica aqui
+    for (int i = 0; i < total_brinquedos; i++)
+    {
+        pthread_join(brinquedos[i]->thread, NULL);
+    }
+
 }
