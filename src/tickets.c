@@ -14,12 +14,25 @@
 
 // Thread que implementa uma bilheteria
 void *sell(void *args){
-    ticket_t *funcionario = (ticket_t *) args;
-    debug("[INFO] - Funcionário %d iniciou\n", funcionario->id);
-    debug("[INFO] - Funcionário %d esperando clientes\n", funcionario->id);
-    sem_post(&sem_buy_coins);
-
-    
+    ticket_t *funcionario = (ticket_t *) args;  // recupera os argumentos do funcionario
+    debug("[INFO] - Funcionário %d iniciou\n", funcionario->id);  // debug
+    while (1) {  // enquanto a fila não estiver vazia
+        pthread_mutex_lock(&mtx_clientes_entraram);
+        if (clientes_entraram == total_clientes){
+            pthread_mutex_unlock(&mtx_clientes_entraram);
+            break;
+        }
+        pthread_mutex_unlock(&mtx_clientes_entraram);
+        pthread_mutex_lock(&mtx_dequeue);  // mutex para controlar a fila
+        int cliente = dequeue(gate_queue);  // desenfileirar o cliente
+        if (cliente != -1) // Se a fila é diferente de -1
+        {
+            sem_post(&sem_buy_coins);  // liberar para os clientes comprarem os tickets
+            debug("[SELL] Funcinário %d atendeu o cliente %d\n", funcionario->id, cliente);
+            clientes_entraram++;
+        }
+        pthread_mutex_unlock(&mtx_dequeue);  //fim do mutex para controlar a fila
+    }
     pthread_exit(NULL);
 }
 
@@ -46,6 +59,8 @@ void open_tickets(tickets_args *args){
         // criação das thread 
         pthread_create(&funcionarios[i]->thread, NULL, sell, (void *)funcionarios[i]);
     }
+
+    bilheteria_aberta = 1; // Espera todas os funcionários iniciarem para abrir a 
     
 }
 
@@ -54,4 +69,9 @@ void close_tickets(){
     for (int i = 0; i < total_func; i++) {
         pthread_join(funcionarios[i]->thread, NULL);
     }
+
+    // Liberando memória
+    free(funcionarios);
+    sem_destroy(&sem_buy_coins);
+    pthread_mutex_destroy(&mtx_clientes_entraram);
 }

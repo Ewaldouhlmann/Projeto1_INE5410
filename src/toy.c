@@ -45,4 +45,6 @@ void close_toys(){
         pthread_join(brinquedos[i]->thread, NULL);
     }
 
+    // Liberando da memória
+    free(brinquedos);
 }

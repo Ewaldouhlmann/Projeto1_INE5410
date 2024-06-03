@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "defs.h"
 #include "client.h"
@@ -21,59 +22,44 @@ void enjoy_toy(client_t *self);
 void *enjoy(void *arg){
     client_t *self = (client_t *) arg;
 
-    queue_enter(self); // Entra na fila da bilheteria e espera comprar as moedas
+    wait_ticket(self); // Espera a bilheteria abrir e obter os tickets
     
-    debug("Moedas do cliente %d - %d\n", self->id, self->coins);
-    while (self->coins > 0)
-    {
-        enjoy_toy(self); // Brinca
-    }
-
     pthread_exit(NULL);
 }
 
 void enjoy_toy(client_t *self)
 {
-    debug("[INFO] - Cliente esta brincando!\n");
-    self->coins--;
+
 }
 
 // Funcao onde o cliente compra as moedas para usar os brinquedos
 void buy_coins(client_t *self){
-    wait_ticket(self); // Espera até ser o primeiro da fila
-    
-    // Após virar o primeiro da fila, ele sinaliza que está esperando
-    sem_wait(&sem_buy_coins);
+    // Se o cliente não for o primeiro da fila ele espera
+    sem_wait(&sem_buy_coins); // Sinalizando que deseja comprar moedas
     self->coins = rand() % MAX_COINS + 1;
-    debug("[INFO] - Cliente [%d] comprou %d moedas\n", self->id, self->coins);
+    debug("[CASH] - Turista [%d] comprou [%d] moedas.\n", self->id, self->coins);
 }
 
 // Função onde o cliente espera a liberacao da bilheteria para adentrar ao parque.
 void wait_ticket(client_t *self){
-    // Espera ser o primeiro da fila
-    while (1)
-    {
-        pthread_mutex_lock(&mtx_dequeue);
-        if (self->id == gate_queue->front->data)
-        {
-            pthread_mutex_unlock(&mtx_dequeue);
-            break;
-        }
-        pthread_mutex_unlock(&mtx_dequeue);
+    // Se a bilheteria estiver aberta o cliente entra na fila
+    while(!bilheteria_aberta){
+        sleep(1);
     }
-}   
+    queue_enter(self);
+}
 
 
 // Funcao onde o cliente entra na fila da bilheteria
 void queue_enter(client_t *self){
-
+    // Garante que apenas um cliente entre por vez na fila
     pthread_mutex_lock(&mtx_enqueue);
-    enqueue(gate_queue, self->id);
+    debug("[WAITING] - Turista [%d] entrou na fila do portão principal\n",self->id);
+    enqueue(gate_queue, self->id); 
     pthread_mutex_unlock(&mtx_enqueue);
+    
+    // Após entrar na fila, o cliente vai paracomprar moedas
     buy_coins(self);
-
-    debug("[WAITING] - Turista [%d] entrou na fila do portao principal\n", self->id);
-
 }
 
 // Essa função recebe como argumento informações sobre o cliente e deve iniciar os clientes.
@@ -96,4 +82,7 @@ void close_gate(){
     {
         pthread_join(clientes[i]->thread, NULL);
     }
+
+    // Liberando memória
+    free(clientes);
 }

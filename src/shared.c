@@ -8,6 +8,8 @@ int total_clientes = 0; // Total de clientes
 int total_brinquedos = 0; // Total de brinquedos
 int total_func = 0; // Total de funcionarios
 int clientes_entraram = 0; // Quantos clientes entraram no parque
+int bilheteria_aberta = 0;
+
 
 toy_t **brinquedos = NULL; // Array de brinquedos
 ticket_t **funcionarios = NULL; // Array de funcionarios
@@ -19,6 +21,7 @@ pthread_mutex_t mtx_bilheteria_iniciada = PTHREAD_MUTEX_INITIALIZER; // Mutex pa
 pthread_mutex_t mtx_clientes_entraram = PTHREAD_MUTEX_INITIALIZER; // Mutex para a bilheteria
 
 sem_t sem_buy_coins; // Semaforo para a bilheteria
+sem_t sem_func_control;  // Semaforo para controlar as threads funcionarios
 
 /**********************************
  *          ATENÇÃO               *

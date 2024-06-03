@@ -8,7 +8,7 @@ extern int total_clientes;  // Total de clientes
 extern int total_brinquedos;    // Total de brinquedos
 extern int total_func;       // Total de funcionarios
 extern int clientes_entraram; // Quantos clientes entraram no parque
-
+extern int bilheteria_aberta;
 
 extern toy_t **brinquedos;  // Array de brinquedos
 extern ticket_t **funcionarios; // Array de funcionarios
@@ -20,6 +20,7 @@ extern pthread_mutex_t mtx_bilheteria_iniciada; // Mutex para a bilheteria
 extern pthread_mutex_t mtx_clientes_entraram; // Mutex para a bilheteria
 
 extern sem_t sem_buy_coins;
+extern sem_t sem_func_control;
 /**********************************
  *          ATENÇÃO               *
  *   NÃO EDITAR ESSAS VARIAVEIS   *
