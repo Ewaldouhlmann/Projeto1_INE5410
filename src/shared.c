@@ -19,6 +19,7 @@ pthread_mutex_t mtx_enqueue = PTHREAD_MUTEX_INITIALIZER; // Mutex para o portão
 pthread_mutex_t mtx_dequeue = PTHREAD_MUTEX_INITIALIZER; // Mutex para a bilheteria
 pthread_mutex_t mtx_bilheteria_iniciada = PTHREAD_MUTEX_INITIALIZER; // Mutex para a bilheteria
 pthread_mutex_t mtx_clientes_entraram = PTHREAD_MUTEX_INITIALIZER; // Mutex para a bilheteria
+pthread_mutex_t mtx_people = PTHREAD_MUTEX_INITIALIZER; // Mutex para controlar as threads funcionarios
 
 sem_t sem_buy_coins; // Semaforo para a bilheteria
 sem_t sem_func_control;  // Semaforo para controlar as threads funcionarios

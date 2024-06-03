@@ -18,7 +18,7 @@ extern pthread_mutex_t mtx_enqueue; // Mutex para o portão principal
 extern pthread_mutex_t mtx_dequeue; // Mutex para a bilheteria
 extern pthread_mutex_t mtx_bilheteria_iniciada; // Mutex para a bilheteria
 extern pthread_mutex_t mtx_clientes_entraram; // Mutex para a bilheteria
-
+extern pthread_mutex_t mtx_people; 
 extern sem_t sem_buy_coins;
 extern sem_t sem_func_control;
 /**********************************
