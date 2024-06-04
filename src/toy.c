@@ -34,19 +34,24 @@ void *turn_on(void *args) {
 
         // Verifica se há clientes no brinquedo, e executa o brinquedo caso tenha
         pthread_mutex_lock(&toy->mtx_clients);
-        if (toy->clients > 0) 
-        {
-            executa_brinquedo(toy); 
-            pthread_mutex_unlock(&toy->mtx_clients); 
-        } 
-        else 
-        {
-            pthread_mutex_unlock(&toy->mtx_clients); 
+        // temporizador para a entrada de clientes no brinquedo
+        for (int i = 0; i < toy->tempo_exec; i++) {
+            sleep(1);
+            /*se a capacidade do brinquedo é igual aos clientes no brinquedo ou 
+            se o tempo de espera acabou e tem pelo menos um cliente, executa o brinquedo*/
+            if (toy->capacity == toy->clients || ((toy->clients > 0) && (i == toy->tempo_exec - 1))) 
+            {
+                executa_brinquedo(toy); 
+                pthread_mutex_unlock(&toy->mtx_clients); 
+            } 
+            else 
+            {
+                pthread_mutex_unlock(&toy->mtx_clients); 
 
-            // Espera para a thread não ficar em loop infinito
-            sleep(toy->tempo_espera); 
+                // Espera para a thread não ficar em loop infinito
+                //sleep(toy->tempo_espera); 
+            }
         }
-
         // Verifica o número total de clientes no parque e sai do loop caso não tenha mais clientes
         if (total_clientes == 0) {
             break;

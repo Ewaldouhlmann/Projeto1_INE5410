@@ -36,7 +36,6 @@ void *enjoy(void *arg){
     while(self->coins > 0){
         enjoy_toy(self);
     }
-
     // Sai do parque, garantindo que apenas um cliente decremente do total de clientes
     pthread_mutex_lock(&mtx_people);
     total_clientes--; 
