@@ -24,7 +24,6 @@ void *enjoy(void *arg){
     
     wait_ticket(self); // Espera a bilheteria abrir e obter os tickets
 
-
     // Enquanto o cliente tiver moedas ele pode brincar
     while(self->coins > 0){
         enjoy_toy(self);
@@ -39,35 +38,34 @@ void *enjoy(void *arg){
 void enjoy_toy(client_t *self) {
     int toy_id = rand() % self->number_toys + 1; // Id do brinquedo que o cliente vai brincar
     toy_t *toy = brinquedos[toy_id - 1]; // Indice do brinquedo é o id - 1
-
+    
     sem_wait(&toy->sem_entrar); // Espera entrar no brinquedo
-    
-    
-    pthread_mutex_lock(&toy->mtx_clients); // Bloqueia o acesso de outros clientes ao brinquedo
-    debug("[TOY] - Cliente [%d] entrou no brinquedo [%d]\n", self->id, toy_id);
-    toy->clients++; // Incrementa o número de clientes no brinquedo
-    pthread_mutex_unlock(&toy->mtx_clients); // Libera o acesso de outros clientes ao brinquedo
-    
-    
-    self->coins--; // Decrementa a quantidade de moedas do cliente
-    sem_wait(&toy->sem_sair); // Espera sair do brinquedo
-    debug("[TOY] - Cliente [%d] saiu do brinquedo [%d]\n", self->id, toy_id);
+    debug("[INFO] - Cliente %d entrou no brinquedo %d\n", self->id, toy_id); // Debug
 
+    pthread_mutex_lock(&toy->mtx_clients); // Bloqueia o contador de clientes no brinquedo
+    toy->clients++; // Incrementa o contador de clientes no brinquedo
+    pthread_mutex_unlock(&toy->mtx_clients); // Libera o contador de clientes no brinquedo
+    self->coins--; // Decrementa a quantidade de moedas do cliente
+    debug("[INFO] - Cliente %d está no brinquedo %d\n", self->id, toy_id); // Debug
+    sem_wait(&toy->sem_sair); // Espera sair do brinquedo
+    debug("[INFO] - Cliente %d saiu do brinquedo %d\n", self->id, toy_id); // Debug
 }
 // Funcao onde o cliente compra as moedas para usar os brinquedos
 void buy_coins(client_t *self){
     // Se o cliente não for o primeiro da fila ele espera
     sem_wait(&sem_buy_coins); // Sinalizando que deseja comprar moedas
     self->coins = rand() % MAX_COINS + 1;
-    debug("[CASH] - Cliente [%d] comprou [%d] moedas.\n", self->id, self->coins);
 }
 
-// Função onde o cliente espera a liberacao da bilheteria para adentrar ao parque.
-void wait_ticket(client_t *self){
-    // Se a bilheteria estiver aberta o cliente entra na fila
-    while(!bilheteria_aberta){
-        sleep(1);
+void wait_ticket(client_t *self) {
+    // Espera até que a bilheteria e os brinquedos estejam abertos
+    pthread_mutex_lock(&sync_mutex);
+    while (!bilheteria_aberta || !brinquedos_abertos) {
+        pthread_cond_wait(&sync_cond, &sync_mutex);
     }
+    pthread_mutex_unlock(&sync_mutex);
+
+    // Se a bilheteria estiver aberta o cliente entra na fila
     queue_enter(self);
 }
 
@@ -76,7 +74,6 @@ void wait_ticket(client_t *self){
 void queue_enter(client_t *self){
     // Garante que apenas um cliente entre por vez na fila
     pthread_mutex_lock(&mtx_enqueue);
-    debug("[WAITING] - Cliente [%d] entrou na fila da bilheteria\n",self->id);
     enqueue(gate_queue, self->id); 
     pthread_mutex_unlock(&mtx_enqueue);
     

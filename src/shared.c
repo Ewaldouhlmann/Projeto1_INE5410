@@ -9,12 +9,21 @@ int total_brinquedos = 0; // Total de brinquedos
 int total_func = 0; // Total de funcionarios
 int clientes_entraram = 0; // Quantos clientes entraram no parque
 int bilheteria_aberta = 0;
+int brinquedos_abertos = 0;
+int sync_count = 0;
 
+
+
+pthread_mutex_t sync_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t sync_cond = PTHREAD_COND_INITIALIZER;
 
 toy_t **brinquedos = NULL; // Array de brinquedos
 ticket_t **funcionarios = NULL; // Array de funcionarios
 client_t **clientes = NULL; // Array de clientes
 
+
+pthread_mutex_t sync_mutex;
+pthread_cond_t sync_cond;
 pthread_mutex_t mtx_enqueue = PTHREAD_MUTEX_INITIALIZER; // Mutex para o portão principal
 pthread_mutex_t mtx_dequeue = PTHREAD_MUTEX_INITIALIZER; // Mutex para a bilheteria
 pthread_mutex_t mtx_bilheteria_iniciada = PTHREAD_MUTEX_INITIALIZER; // Mutex para a bilheteria

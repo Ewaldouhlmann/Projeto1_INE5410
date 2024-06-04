@@ -16,6 +16,7 @@
 void *sell(void *args){
     ticket_t *funcionario = (ticket_t *) args;  // recupera os argumentos do funcionario
     debug("[INFO] - Funcionário %d iniciou\n", funcionario->id);  // debug
+    //debug("[INFO] - Funcionário %d iniciou\n", funcionario->id);  // debug
     while (1) {  // enquanto a fila não estiver vazia
         pthread_mutex_lock(&mtx_clientes_entraram);
         if (clientes_entraram == total_clientes){
@@ -28,7 +29,7 @@ void *sell(void *args){
         if (cliente != -1) // Se a fila é diferente de -1
         {
             sem_post(&sem_buy_coins);  // liberar para os clientes comprarem os tickets
-            debug("[SELL] Funcinário %d atendeu o cliente %d\n", funcionario->id, cliente);
+            //debug("[SELL] Funcinário %d atendeu o cliente %d\n", funcionario->id, cliente);
             clientes_entraram++;
         }
         pthread_mutex_unlock(&mtx_dequeue);  //fim do mutex para controlar a fila
@@ -39,6 +40,7 @@ void *sell(void *args){
 // Essa função recebe como argumento informações sobre a bilheteria e deve iniciar os atendentes.
 void open_tickets(tickets_args *args){
     total_func = args->n;
+    bilheteria_aberta = 0;
     funcionarios = malloc(sizeof(ticket_t *) * total_func);
 
     // Inicializa o semáforo
@@ -59,9 +61,15 @@ void open_tickets(tickets_args *args){
         // criação das thread 
         pthread_create(&funcionarios[i]->thread, NULL, sell, (void *)funcionarios[i]);
     }
+    // Sincroniza com os brinquedos
+    pthread_mutex_lock(&sync_mutex);
+    sync_count += total_func;
+    if (sync_count >= total_brinquedos + total_func) {
+        bilheteria_aberta = 1;
+        pthread_cond_broadcast(&sync_cond);
+    }
+    pthread_mutex_unlock(&sync_mutex);
 
-    bilheteria_aberta = 1; // Espera todas os funcionários iniciarem para abrir a 
-    
 }
 
 // Essa função deve finalizar a bilheteria
