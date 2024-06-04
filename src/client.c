@@ -24,6 +24,7 @@ void *enjoy(void *arg){
     
     wait_ticket(self); // Espera a bilheteria abrir e obter os tickets
 
+    debug("[CLIENT] - Cliente %d entrou no parque\n", self->id); // Debug
     // Enquanto o cliente tiver moedas ele pode brincar
     while(self->coins > 0){
         enjoy_toy(self);
@@ -73,6 +74,7 @@ void wait_ticket(client_t *self) {
 // Funcao onde o cliente entra na fila da bilheteria
 void queue_enter(client_t *self){
     // Garante que apenas um cliente entre por vez na fila
+    debug("[INFO] - Cliente %d entrou na fila\n", self->id); 
     pthread_mutex_lock(&mtx_enqueue);
     enqueue(gate_queue, self->id); 
     pthread_mutex_unlock(&mtx_enqueue);
@@ -87,7 +89,7 @@ void open_gate(client_args *args){
     total_clientes = args->n; 
     clientes = malloc(sizeof(client_t *) * total_clientes); 
     
-
+    
     for(int i = 0; i < total_clientes; i++)
     {
         clientes[i] = args->clients[i];
@@ -97,6 +99,7 @@ void open_gate(client_args *args){
 
 // Essa função deve finalizar os clientes
 void close_gate(){
+    // Espera todos os clientes finalizarem
     for (int i = 0; i < total_clientes; i++)
     {
         pthread_join(clientes[i]->thread, NULL);

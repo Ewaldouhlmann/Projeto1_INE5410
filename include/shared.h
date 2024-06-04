@@ -8,7 +8,7 @@ extern int total_clientes;  // Total de clientes
 extern int total_brinquedos;    // Total de brinquedos
 extern int total_func;       // Total de funcionarios
 extern int clientes_entraram; // Quantos clientes entraram no parque
-extern int bilheteria_aberta;
+extern int bilheteria_aberta; 
 extern int brinquedos_abertos;
 
 extern pthread_mutex_t sync_mutex;
