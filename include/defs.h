@@ -31,7 +31,6 @@ typedef struct toy{
   int clients;              // A quantidade de clientes em um brinquedo.
   int tempo_exec;           // Tempo de execução do brinquedo.
   int tempo_espera;         // Tempo de espera do brinquedo.
-  time_t cronometro;        // Cronômetro do brinquedo.
   sem_t sem_entrar;         // Semáforo para controlar a entrada de clientes.
   sem_t sem_sair;           // Semáforo para controlar a saída de clientes.
   pthread_mutex_t mtx_clients;    // Mutex para controlar a entrada de clientes.
@@ -43,7 +42,6 @@ typedef struct client{
   int id;                   // O id do cliente.
   int coins;                // Quantidade de moedas do cliente.
   int number_toys;          // Numero de brinquedos disponiveis.
-  int tempo_exec;           // Tempo de execução do brinquedo.
   pthread_t thread;         // A thread do cliente.
   toy_t **toys;             // (Copy) Array de brinquedos.
 } client_t;

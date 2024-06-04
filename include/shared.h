@@ -7,26 +7,17 @@
 extern int total_clientes;  // Total de clientes
 extern int total_brinquedos;    // Total de brinquedos
 extern int total_func;       // Total de funcionarios
-extern int clientes_entraram; // Quantos clientes entraram no parque
-extern int bilheteria_aberta; 
-extern int brinquedos_abertos;
+extern int bilheteria_aberta; // Flag que indica se a bilheteria está aberta
+extern int brinquedos_abertos;  // Flag que indica se os brinquedos estão abertos
+extern int sync_count; // Contador para sincronização
 
-extern pthread_mutex_t sync_mutex;
-extern pthread_cond_t sync_cond;
-extern int sync_count;
+extern pthread_mutex_t sync_mutex; // Mutex para avisar que a bilheteria e os brinquedos estão abertos
+extern pthread_cond_t sync_cond;    // Variável de condição para avisar que a bilheteria e os brinquedos estão abertos
 
 extern toy_t **brinquedos;  // Array de brinquedos
 extern ticket_t **funcionarios; // Array de funcionarios
-extern client_t **clientes; // Array de clientes
 
-extern pthread_mutex_t mtx_enqueue; // Mutex para o portão principal
-extern pthread_mutex_t mtx_dequeue; // Mutex para a bilheteria
-extern pthread_mutex_t mtx_bilheteria_iniciada; // Mutex para a bilheteria
-extern pthread_mutex_t mtx_clientes_entraram; // Mutex para a bilheteria
-extern pthread_mutex_t mtx_people; // Mutex para controlar as threads funcionarios
-
-extern sem_t sem_buy_coins;
-extern sem_t sem_func_control;
+extern sem_t sem_buy_coins; // Semaforo para a bilheteria
 /**********************************
  *          ATENÇÃO               *
  *   NÃO EDITAR ESSAS VARIAVEIS   *

@@ -17,91 +17,121 @@ void liberar_vagas(toy_t *toy);
 void executa_brinquedo(toy_t *toy);
 
 void *turn_on(void *args) {
+    // Pega os argumentos do brinquedo e define o tempo de execução e espera
     toy_t *toy = (toy_t *) args;
-    toy->tempo_exec = 0; // Tempo de execução do brinquedo
-    toy->tempo_espera = rand() % 5 + 1; // Tempo de espera do brinquedo
-    sem_init(&toy->sem_entrar, 0, toy->capacity); // Inicializa o semáforo de entrada com capacidade total
-    sem_init(&toy->sem_sair, 0, 0); // Inicializa o semáforo de saída com 0
-    debug("[INFO] - Brinquedo [%d] iniciado\n", toy->id);
+    toy->tempo_exec = rand() % 5 + 1;
+    toy->tempo_espera = 5; 
 
+    // Inicializa os semáforos e mutex do brinquedo
+    sem_init(&toy->sem_entrar, 0, toy->capacity); 
+    sem_init(&toy->sem_sair, 0, 0); 
+    pthread_mutex_init(&toy->mtx_clients, NULL);
+
+    debug("[START] - Brinquedo [%d] iniciado\n", toy->id);
+
+    // Enquanto houver clientes no parque, executa o brinquedo
     while (1) {
-        pthread_mutex_lock(&toy->mtx_clients); // Bloqueia o contador de clientes no brinquedo
-        if (toy->clients > 0) {
-            debug("[TOY] - Brinquedo [%d] com %d clientes\n", toy->id, toy->clients);
-            executa_brinquedo(toy); // Executa o brinquedo
-            pthread_mutex_unlock(&toy->mtx_clients); // Libera o contador de clientes no brinquedo
-        } else {
-            debug("[TOY] - Brinquedo [%d] sem clientes\n", toy->id);
-            pthread_mutex_unlock(&toy->mtx_clients); // Libera o contador de clientes no brinquedo
-            sleep(toy->tempo_espera); // Espera um tempo aleatório
+
+        // Verifica se há clientes no brinquedo, e executa o brinquedo caso tenha
+        pthread_mutex_lock(&toy->mtx_clients);
+        if (toy->clients > 0) 
+        {
+            executa_brinquedo(toy); 
+            pthread_mutex_unlock(&toy->mtx_clients); 
+        } 
+        else 
+        {
+            pthread_mutex_unlock(&toy->mtx_clients); 
+
+            // Espera para a thread não ficar em loop infinito
+            sleep(toy->tempo_espera); 
         }
 
+        // Verifica o número total de clientes no parque e sai do loop caso não tenha mais clientes
         if (total_clientes == 0) {
-            break; // Sai do loop quando não há mais clientes
+            break;
         }
     }
 
+    debug("[END] - Brinquedo [%d] encerrado\n", toy->id);
     pthread_exit(NULL);
 }
 
+
+// Essa função executa o brinquedo
 void executa_brinquedo(toy_t *toy) {
-    debug("[TOY] - Brinquedo [%d] ligou\n", toy->id);
+    // Brinquedo inicia e espera até o fim da execução
+    debug("[ON] - Brinquedo [%d] foi ligado\n", toy->id);
 
-    sleep(toy->tempo_exec); // Brinquedo aberto por um tempo aleatório
+    sleep(toy->tempo_exec);
 
-    liberar_clientes(toy); // Libera os clientes do brinquedo
-    liberar_vagas(toy); // Libera as vagas do brinquedo
+    debug("[TOY] - Brinquedo [%d] foi desligado\n", toy->id);
 
-    debug("[TOY] - Brinquedo [%d] encerrou\n", toy->id);
+    // Libera os clientes que estão no brinquedo
+    liberar_clientes(toy);
+
+    // Permitir que novos clientes entrem no brinquedo
+    liberar_vagas(toy);
+
 }
 
+
+// Essa função libera as vagas restantes do brinquedo
 void liberar_vagas(toy_t *toy) {
-    int vagas = toy->clients; // Recupera o número de vagas
-    toy->clients = 0; // Reseta o contador de clientes
-    debug("[TOY] - Brinquedo [%d] liberando %d vagas\n", toy->id, vagas);
+    // Guarda o número de vagas para serem liberadas e reseta o número de clientes
+    int vagas = toy->clients;
+    toy->clients = 0;
+
+    // Libera as novas vagas para o brinquedo
     for (int i = 0; i < vagas; i++) {
-        sem_post(&toy->sem_entrar); // Libera a entrada de um cliente
+        sem_post(&toy->sem_entrar);
     }
 }
 
+// Essa função libera os clientes do brinquedo
 void liberar_clientes(toy_t *toy) {
-    debug("[TOY] - Brinquedo [%d] liberando %d clientes\n", toy->id, toy->clients);
+    // Libera os clientes que estavam no brinquedo para procurarem outro brinquedo ou sair do parque
     for (int i = 0; i < toy->clients; i++) {
-        sem_post(&toy->sem_sair); // Libera a saída de um cliente
+        sem_post(&toy->sem_sair);
     }
 }
 
 
 void open_toys(toy_args *args) {
-    total_brinquedos = args->n;   // Recupera o total de brinquedos
+    // Guarda o total de brinquedos e inicializa o array de brinquedos
+    total_brinquedos = args->n; 
     brinquedos = malloc(sizeof(toy_t *) * total_brinquedos);
 
+    // Inicializa as threads dos brinquedos
     for (int i = 0; i < total_brinquedos; i++) {
         brinquedos[i] = args->toys[i];
         pthread_create(&brinquedos[i]->thread, NULL, turn_on, (void *)brinquedos[i]);
     }
 
-    // Sincroniza com os funcionários
+    // Sincroniza para liberar a bilheteria
     pthread_mutex_lock(&sync_mutex);
     sync_count += total_brinquedos;
     if (sync_count >= total_brinquedos + total_func) {
         brinquedos_abertos = 1;
-        pthread_cond_broadcast(&sync_cond);
+        // Acorda a condição de broadcast para liberar a bilheteria
+        pthread_cond_broadcast(&sync_cond); 
     }
     pthread_mutex_unlock(&sync_mutex);
+
 }
 
 // Desligando os brinquedos
 void close_toys(){
+    // Espera a finalização dos brinquedos
     for (int i = 0; i < total_brinquedos; i++)
     {
+        // Dá join nas threads dos brinquedos e destroi os semáforos e mutex
+        pthread_join(brinquedos[i]->thread, NULL);
         sem_destroy(&brinquedos[i]->sem_sair);
         sem_destroy(&brinquedos[i]->sem_entrar);
         pthread_mutex_destroy(&brinquedos[i]->mtx_clients);
-        pthread_join(brinquedos[i]->thread, NULL);
     }
 
-    // Liberando da memórias
-
+    // Liberando os brinquedos da memória
     free(brinquedos);
 }

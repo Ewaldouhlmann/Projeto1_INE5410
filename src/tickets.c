@@ -12,40 +12,78 @@
 #include "shared.h"
 
 
+// Variáveis compartilhadas no arquivo
+static int clientes_entraram = 0; // Quantos clientes entraram no parque
+static pthread_mutex_t mtx_dequeue = PTHREAD_MUTEX_INITIALIZER; // Mutex para a saída fila
+static pthread_mutex_t mtx_clientes_entraram = PTHREAD_MUTEX_INITIALIZER; // Mutex para a bilheteria
+
 // Thread que implementa uma bilheteria
 void *sell(void *args){
-    ticket_t *funcionario = (ticket_t *) args;  // recupera os argumentos do funcionario
-    debug("[INFO] - Funcionário %d iniciou\n", funcionario->id);  // debug
-    //debug("[INFO] - Funcionário %d iniciou\n", funcionario->id);  // debug
-    while (1) {  // enquanto a fila não estiver vazia
+    // Recupera o funcionário e avisa que ele iniciou
+    ticket_t *funcionario = (ticket_t *) args;  
+    debug("[INFO] - Funcionário %d iniciou\n", funcionario->id);  
+
+    // Espera a bilheteria abrir
+    while (!bilheteria_aberta) {
+        pthread_mutex_lock(&sync_mutex);
+        pthread_cond_wait(&sync_cond, &sync_mutex);
+        pthread_mutex_unlock(&sync_mutex);
+    }
+    
+    // Após a bilheteria abrir, atende os clientes, enquanto houver
+    while (1) {
+        // Verifica se todos os clientes já entraram e sai do loop, caso sim
         pthread_mutex_lock(&mtx_clientes_entraram);
-        if (clientes_entraram == total_clientes){
+        if (clientes_entraram == total_clientes)
+        {
             pthread_mutex_unlock(&mtx_clientes_entraram);
             break;
         }
         pthread_mutex_unlock(&mtx_clientes_entraram);
-        pthread_mutex_lock(&mtx_dequeue);  // mutex para controlar a fila
-        int cliente = dequeue(gate_queue);  // desenfileirar o cliente
-        if (cliente != -1) // Se a fila é diferente de -1
+        
+        // Bloqueia o dequeue para controlar a fila
+        pthread_mutex_lock(&mtx_dequeue); 
+        // Se a fila estiver vazia, libera o mutex e continua
+        if (is_queue_empty(gate_queue)) 
         {
-            sem_post(&sem_buy_coins);  // liberar para os clientes comprarem os tickets
-            //debug("[SELL] Funcinário %d atendeu o cliente %d\n", funcionario->id, cliente);
-            clientes_entraram++;
+            pthread_mutex_unlock(&mtx_dequeue);
+            continue;
         }
-        pthread_mutex_unlock(&mtx_dequeue);  //fim do mutex para controlar a fila
+        else
+        {
+            // Se a fila não estiver vazia, atende o cliente
+            int cliente = dequeue(gate_queue);
+            
+            // Atende o cliente 
+            debug("[INFO] - Funcionário %d atendendo cliente %d\n", funcionario->id, cliente);
+            sleep(rand()%3 + 1); // Tempo de atendimento aleatório
+
+            // Libera o semáforo para próximo cliente
+            sem_post(&sem_buy_coins);
+
+            // Adiciona ao contador de clientes que entraram
+            pthread_mutex_lock(&mtx_clientes_entraram);
+            clientes_entraram++;
+            pthread_mutex_unlock(&mtx_clientes_entraram);
+
+            // Libera o mutex de dequeue
+            pthread_mutex_unlock(&mtx_dequeue);
+        }
+        // Descansa um pouco para outras threads terem a chance de atender
+        sleep(3); 
     }
     pthread_exit(NULL);
 }
 
 // Essa função recebe como argumento informações sobre a bilheteria e deve iniciar os atendentes.
 void open_tickets(tickets_args *args){
+    // Inicializa as variáveis e aloca memória para os funcionários
     total_func = args->n;
     bilheteria_aberta = 0;
     funcionarios = malloc(sizeof(ticket_t *) * total_func);
 
     // Inicializa o semáforo
     sem_init(&sem_buy_coins, 0, 0);
-
 
     /*Se o número de funcionários for maior que o número de clientes,  
     somente será necessário que tenha um funcionário *por cliente*/
@@ -54,14 +92,15 @@ void open_tickets(tickets_args *args){
         total_func = total_clientes;
     }
 
+    // Cria as threads dos funcionários
     for(int i = 0; i < total_func; i++)
     {
-        //recupera as threads e adicionando no array de threads funcionarios
         funcionarios[i] = args->tickets[i]; 
-        // criação das thread 
         pthread_create(&funcionarios[i]->thread, NULL, sell, (void *)funcionarios[i]);
     }
-    // Sincroniza com os brinquedos
+
+
+    // Sincroniza para abria a bilheteria
     pthread_mutex_lock(&sync_mutex);
     sync_count += total_func;
     if (sync_count >= total_brinquedos + total_func) {
@@ -80,6 +119,14 @@ void close_tickets(){
 
     // Liberando memória
     free(funcionarios);
+    // Destruindo o semáforo, pois todos os clientes já compraram os tickets
     sem_destroy(&sem_buy_coins);
+
+    // Destruindo os mutexes utilizados na fila e na contagem de clientes
     pthread_mutex_destroy(&mtx_clientes_entraram);
+    pthread_mutex_destroy(&mtx_dequeue);
+
+    // Destruindo o mutex e cond de sincronização, como só é necessário até os clientes entrarem, pode ser destruído aqui
+    pthread_mutex_destroy(&sync_mutex);
+    pthread_cond_destroy(&sync_cond);
 }
