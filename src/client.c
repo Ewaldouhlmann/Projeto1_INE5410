@@ -105,6 +105,7 @@ void queue_enter(client_t *self){
 void open_gate(client_args *args){
     // Alocando memória para cada cliente e guardando o total de clientes
     total_clientes = args->n; 
+    total_clientes_const = args->n;
     clientes = malloc(sizeof(client_t *) * total_clientes); 
     
     // Criando as threads dos clientes
@@ -119,7 +120,7 @@ void open_gate(client_args *args){
 void close_gate(){
     
     // Espera todos os clientes finalizarem
-    for (int i = 0; i < total_clientes; i++)
+    for (int i = 0; i < total_clientes_const; i++)
     {
         pthread_join(clientes[i]->thread, NULL);
     }

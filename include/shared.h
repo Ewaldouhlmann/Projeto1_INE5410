@@ -5,6 +5,7 @@
 #include <pthread.h>
 // Você pode declarar novas funções (ou variaveis compartilhadas) aqui
 extern int total_clientes;  // Total de clientes
+extern int total_clientes_const;  // Total de clientes
 extern int total_brinquedos;    // Total de brinquedos
 extern int total_func;       // Total de funcionarios
 extern int bilheteria_aberta; // Flag que indica se a bilheteria está aberta

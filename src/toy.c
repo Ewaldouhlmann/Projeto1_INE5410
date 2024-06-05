@@ -133,10 +133,10 @@ void close_toys(){
     for (int i = 0; i < total_brinquedos; i++)
     {
         // Dá join nas threads dos brinquedos e destroi os semáforos e mutex
-        pthread_join(brinquedos[i]->thread, NULL);
         sem_destroy(&brinquedos[i]->sem_sair);
         sem_destroy(&brinquedos[i]->sem_entrar);
         pthread_mutex_destroy(&brinquedos[i]->mtx_clients);
+        pthread_join(brinquedos[i]->thread, NULL);
     }
 
     // Liberando os brinquedos da memória
