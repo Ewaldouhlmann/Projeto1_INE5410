@@ -65,7 +65,7 @@ void executa_brinquedo(toy_t *toy) {
 
     sleep(toy->tempo_exec);
 
-    debug("[TOY] - Brinquedo [%d] foi desligado\n", toy->id);
+    debug("[OFF] - Brinquedo [%d] foi desligado\n", toy->id);
 
     // Libera os clientes que estão no brinquedo
     liberar_clientes(toy);
