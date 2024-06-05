@@ -151,6 +151,10 @@ int main(int argc, char *argv[]){
     *********************************************************************************/
     
     // Sincronize aqui
+    #include <unistd.h>
+    while (sync_fechamento != total_brinquedos) {
+        sleep(1);
+    }
 
     // Desalocando argumentos.
     free(cli_args);

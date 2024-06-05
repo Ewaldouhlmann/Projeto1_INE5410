@@ -54,9 +54,11 @@ void *turn_on(void *args) {
         }
         // Verifica o número total de clientes no parque e sai do loop caso não tenha mais clientes
         if (total_clientes == 0) {
+            sync_fechamento++;
             break;
         }
     }
+    printf("Total Clientes: %d", total_clientes);
 
     debug("[END] - Brinquedo [%d] encerrado\n", toy->id);
     pthread_exit(NULL);
@@ -70,7 +72,7 @@ void executa_brinquedo(toy_t *toy) {
 
     sleep(toy->tempo_exec);
 
-    debug("[TOY] - Brinquedo [%d] foi desligado\n", toy->id);
+    debug("[OFF] - Brinquedo [%d] foi desligado\n", toy->id);
 
     // Libera os clientes que estão no brinquedo
     liberar_clientes(toy);
